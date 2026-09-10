@@ -1,11 +1,10 @@
 {
-    "schedule": {},
-    "notes": {},
-    "disciplines": [],
-    "settings": {
-        "bg_type": "color",
-        "bg_value": "#b30000",
-        "bot_token": "",
-        "chat_id": ""
+  "notes": [
+    {
+      "title": "Сдать проект",
+      "content": "Загрузить код на GitHub и проверить деплой",
+      "priority": "High",
+      "run_date": "2026-09-10 15:30:00"
     }
+  ]
 }
