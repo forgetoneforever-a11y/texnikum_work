@@ -2,52 +2,121 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Organizer - Календарь</title>
+    <title>Organizer - Календарь событий</title>
     <style>
+        :root {
+            --bg-color: #0d0f18;
+            --sidebar-bg: #121520;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --accent-color: #58a6ff;
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+        }
+
         body {
-            background-color: #0d0f18;
-            color: #ffffff;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             font-family: Arial, sans-serif;
             margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Боковая панель */
+        .sidebar {
+            width: 240px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
             padding: 20px;
         }
-        h2 {
-            margin-bottom: 20px;
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 40px;
         }
+
+        .nav-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-links li {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: 0.2s;
+        }
+
+        .nav-links li.active, .nav-links li:hover {
+            background-color: rgba(88, 166, 255, 0.1);
+            color: var(--text-main);
+        }
+
+        /* Основной контент */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
         /* Сетка календаря на весь месяц */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-            max-width: 1000px;
+            gap: 12px;
         }
+
         .calendar-day {
-            background-color: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 12px;
-            min-height: 90px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 110px;
             cursor: pointer;
             transition: 0.2s;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
+
         .calendar-day:hover {
-            border-color: #58a6ff;
+            border-color: var(--accent-color);
             background-color: #1f242c;
         }
+
         .day-number {
             font-weight: bold;
-            color: #8b949e;
+            color: var(--text-muted);
         }
+
         .day-note-preview {
             font-size: 11px;
             background: #238636;
             color: #fff;
-            padding: 2px 5px;
+            padding: 3px 6px;
             border-radius: 4px;
-            margin-top: 5px;
+            margin-top: 4px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -62,103 +131,134 @@
             justify-content: center;
             align-items: center;
         }
+
         .modal-content {
-            background-color: #161b22;
-            border: 1px solid #30363d;
-            padding: 20px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 25px;
             border-radius: 12px;
-            width: 400px;
+            width: 450px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+
         .modal-content textarea {
             width: 100%;
-            height: 100px;
-            background-color: #0d0f18;
-            border: 1px solid #30363d;
+            height: 120px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
             color: #fff;
             border-radius: 6px;
-            padding: 10px;
+            padding: 12px;
             resize: none;
             box-sizing: border-box;
-            margin-top: 10px;
+            margin-top: 15px;
+            font-size: 14px;
         }
+
         .modal-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
+
         button {
-            padding: 8px 16px;
+            padding: 10px 18px;
             border-radius: 6px;
             border: none;
             cursor: pointer;
+            font-weight: bold;
         }
+
         .btn-cancel {
-            background-color: #30363d;
+            background-color: var(--border-color);
             color: #fff;
         }
+
         .btn-save {
             background-color: #238636;
             color: #fff;
         }
 
-        /* Список сохраненных заметок */
+        /* Блок со списком всех задач внизу */
         .notes-section {
             margin-top: 40px;
-            max-width: 1000px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
         }
+
         .note-item {
-            background: #161b22;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-bottom: 8px;
+            background: var(--card-bg);
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 10px;
             border-left: 4px solid #238636;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
     </style>
 </head>
 <body>
 
-    <h2>Календарь событий (Сентябрь 2026)</h2>
-
-    <!-- Автоматическая сетка дней месяца (с 1 по 30) -->
-    <div class="calendar-grid">
-        {% for day in range(1, 31) %}
-            {% set day_str = "2026-09-%02d" % day %}
-            <div class="calendar-day" onclick="openModal('{{ day_str }} 12:00:00', '{{ day }} Сентября 2026')">
-                <div class="day-number">{{ day }}</div>
-                
-                <!-- Показываем задачи, привязанные к этому дню -->
-                <div class="day-tasks">
-                    {% for note in notes %}
-                        {% if note.run_date and note.run_date.startswith(day_str) %}
-                            <div class="day-note-preview" title="{{ note.content }}">{{ note.content }}</div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-        {% endfor %}
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="logo">Organizer</div>
+        <ul class="nav-links">
+            <li>Пансионы</li>
+            <li class="active">Календарь</li>
+            <li>Настройки</li>
+        </ul>
     </div>
 
-    <!-- Общий список задач -->
-    <div class="notes-section">
-        <h3>Все сохраненные задачи:</h3>
-        {% if notes %}
-            {% for note in notes %}
-                <div class="note-item">
-                    <strong>📅 {{ note.run_date }}</strong>
-                    <p>{{ note.content }}</p>
+    <!-- Основное содержимое -->
+    <div class="main-content">
+        <div class="header-container">
+            <h2>Календарь событий</h2>
+            <div>Сентябрь 2026</div>
+        </div>
+
+        <!-- Сетка календаря (полный месяц с 1 по 30) -->
+        <div class="calendar-grid">
+            {% for day in range(1, 31) %}
+                {% set day_str = "2026-09-%02d" % day %}
+                <div class="calendar-day" onclick="openModal('{{ day_str }} 12:00:00', '{{ day }} Сентября 2026')">
+                    <div class="day-number">{{ day }}</div>
+                    
+                    <div class="day-tasks">
+                        {% for note in notes %}
+                            {% if note.run_date and note.run_date.startswith(day_str) %}
+                                <div class="day-note-preview" title="{{ note.content }}">{{ note.content }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
             {% endfor %}
-        {% else %}
-            <p style="color: #8b949e;">Пока нет ни одной заметки.</p>
-        {% endif %}
+        </div>
+
+        <!-- Список всех задач -->
+        <div class="notes-section">
+            <h3>Все сохраненные задачи:</h3>
+            {% if notes %}
+                {% for note in notes %}
+                    <div class="note-item">
+                        <div>
+                            <strong style="color: var(--accent-color);">📅 {{ note.run_date }}</strong>
+                            <p style="margin: 5px 0 0 0;">{{ note.content }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--text-muted);">Пока нет ни одной сохраненной заметки.</p>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Модальное окно -->
     <div id="eventModal" class="modal">
         <div class="modal-content">
             <form action="/add_note" method="POST">
-                <h3 id="modalTitle">Событие</h3>
+                <h3 id="modalTitle" style="margin-top:0;">Событие</h3>
                 
                 <input type="hidden" name="run_date" id="selectedDateInput">
                 
