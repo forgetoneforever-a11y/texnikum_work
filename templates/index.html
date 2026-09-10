@@ -3,132 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <title>Organizer</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background-color: #0d0f18;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 30px;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        /* Сетка календаря */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            max-width: 900px;
+            margin-bottom: 40px;
+        }
+        .calendar-day {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 80px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .calendar-day:hover {
+            border-color: #58a6ff;
+            background-color: #1f242c;
+        }
+        .day-number {
+            font-weight: bold;
+            color: #8b949e;
+        }
+        .day-note-preview {
+            font-size: 11px;
+            background: #238636;
+            color: #fff;
+            padding: 2px 5px;
+            border-radius: 4px;
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+        }
+        .modal-content textarea {
+            width: 100%;
+            height: 100px;
+            background-color: #0d0f18;
+            border: 1px solid #30363d;
+            color: #fff;
+            border-radius: 6px;
+            padding: 10px;
+            resize: none;
+            box-sizing: border-box;
+            margin-top: 10px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-cancel {
+            background-color: #30363d;
+            color: #fff;
+        }
+        .btn-save {
+            background-color: #238636;
+            color: #fff;
+        }
+
+        /* Список задач */
+        .notes-section {
+            max-width: 900px;
+        }
+        .note-item {
+            background: #161b22;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 4px solid #238636;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Фоновое видео -->
-    <video id="bg-video" autoplay muted loop>
-        <source src="" type="video/mp4" id="bg-source">
-    </video>
+    <h2>Календарь событий (Сентябрь 2026)</h2>
 
-    <!-- Меню -->
-    <div class="sidebar">
-        <div class="logo">⚡ Organizer</div>
-        <div class="menu-item active" onclick="switchTab('schedule', this)">📅 Расписание</div>
-        <div class="menu-item" onclick="switchTab('calendar', this)">🗓️ Календарь</div>
-        <div class="menu-item" onclick="switchTab('settings', this)">⚙️ Настройки</div>
+    <!-- Календарь на месяц -->
+    <div class="calendar-grid">
+        {% for day in range(1, 31) %}
+            {% set day_str = "2026-09-%02d" % day %}
+            <div class="calendar-day" onclick="openModal('{{ day_str }} 12:00:00', '{{ day }} Сентября')">
+                <div class="day-number">{{ day }}</div>
+                {% for note in notes %}
+                    {% if note.run_date and note.run_date.startswith(day_str) %}
+                        <div class="day-note-preview" title="{{ note.content }}">{{ note.content }}</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endfor %}
     </div>
 
-    <!-- Контент -->
-    <div class="main-content">
-        
-        <!-- Панель: Расписание -->
-        <div id="schedule" class="panel active">
-            <div class="schedule-top-header">
-                <h2>Расписание занятий</h2>
-                <button class="btn btn-save" onclick="openScheduleModal()">➕ Добавить занятие</button>
-            </div>
-            <div class="schedule-container" id="schedule-list"></div>
-        </div>
-
-        <!-- Панель: Календарь -->
-        <div id="calendar" class="panel">
-            <div class="calendar-header">
-                <h2>Календарь событий</h2>
-                <div class="calendar-nav">
-                    <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
-                    <span id="month-year-display">Сентябрь 2026</span>
-                    <button class="nav-btn" onclick="changeMonth(1)">›</button>
+    <!-- Список всех сохраненных задач -->
+    <div class="notes-section">
+        <h3>Сохранять задачи:</h3>
+        {% if notes %}
+            {% for note in notes %}
+                <div class="note-item">
+                    <strong style="color: #58a6ff;">📅 {{ note.run_date }}</strong>
+                    <p style="margin: 5px 0 0 0;">{{ note.content }}</p>
                 </div>
-            </div>
-            <div class="calendar-grid" id="cal-grid"></div>
-        </div>
-
-        <!-- Панель: Настройки -->
-        <div id="settings" class="panel">
-            <h2>Настройки интерфейса</h2>
-            <div class="settings-container">
-                <div class="drop-zone" onclick="document.getElementById('file-input').click()">
-                    📁 Выбрать видеофайл для фона ПК
-                </div>
-                <input type="file" id="file-input" style="display: none;" accept="video/*" onchange="loadBackground(event)">
-                <div id="file-info" style="font-size: 13px; color: #888;">Фон не выбран</div>
-
-                <div class="setting-group">
-                    <label for="blur-slider">Размытие интерфейса (Blur): <span id="blur-value">12</span>px</label>
-                    <input type="range" id="blur-slider" min="0" max="30" value="12" oninput="updateBlur(this.value)">
-                </div>
-            </div>
-        </div>
-
+            {% endfor %}
+        {% else %}
+            <p style="color: #8b949e;">Пока нет ни одной заметки.</p>
+        {% endif %}
     </div>
 
-    <!-- Модальное окно для заметок в календаре (с выбором цвета) -->
-    <div id="note-modal" class="modal">
+    <!-- Модальное окно -->
+    <div id="eventModal" class="modal">
         <div class="modal-content">
-            <h3 id="modal-title">День 1</h3>
-            <textarea id="note-text" placeholder="Введите заметку или задачу..."></textarea>
-            
-            <div class="form-group">
-                <label>Приоритет / Цвет:</label>
-                <div class="color-picker-group">
-                    <label class="color-option green">
-                        <input type="radio" name="note-color" value="green" checked>
-                        <span>🟢 Рутина / Выполнено</span>
-                    </label>
-                    <label class="color-option orange">
-                        <input type="radio" name="note-color" value="orange">
-                        <span>🟠 Средний приоритет</span>
-                    </label>
-                    <label class="color-option red">
-                        <input type="radio" name="note-color" value="red">
-                        <span>🔴 Важный дедлайн</span>
-                    </label>
+            <form action="/add_note" method="POST">
+                <h3 id="modalTitle" style="margin-top:0;">Событие</h3>
+                <input type="hidden" name="run_date" id="selectedDateInput">
+                <textarea name="content" placeholder="Введите задачу..." required></textarea>
+                <div class="modal-actions">
+                    <button type="button" onclick="closeModal()" class="btn-cancel">Отмена</button>
+                    <button type="submit" class="btn-save">Сохранить</button>
                 </div>
-            </div>
-
-            <div class="modal-buttons">
-                <button class="btn btn-cancel" onclick="closeModal()">Отмена</button>
-                <button class="btn btn-save" onclick="saveNote()">Сохранить</button>
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- Модальное окно для добавления / редактирования расписания -->
-    <div id="schedule-modal" class="modal">
-        <div class="modal-content">
-            <h3 id="sched-modal-title">Добавить занятие</h3>
-            <div class="form-group">
-                <label>День недели:</label>
-                <select id="sched-day">
-                    <option value="Понедельник">Понедельник</option>
-                    <option value="Вторник">Вторник</option>
-                    <option value="Среда">Среда</option>
-                    <option value="Четверг">Четверг</option>
-                    <option value="Пятница">Пятница</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Время:</label>
-                <input type="text" id="sched-time" placeholder="например, 09:00 - 10:30">
-            </div>
-            <div class="form-group">
-                <label>Название дисциплины:</label>
-                <input type="text" id="sched-name" list="subjects-list" placeholder="Введите или выберите предмет...">
-                <datalist id="subjects-list"></datalist>
-            </div>
-            <div class="form-group">
-                <label>Аудитория / Кабинет:</label>
-                <input type="text" id="sched-room" placeholder="например, Ауд. 304">
-            </div>
-            <div class="modal-buttons">
-                <button class="btn btn-cancel" onclick="closeScheduleModal()">Отмена</button>
-                <button class="btn btn-save" onclick="saveScheduleItem()">Сохранить</button>
-            </div>
-        </div>
-    </div>
+    <script>
+        function openModal(dateStr, titleStr) {
+            document.getElementById('selectedDateInput').value = dateStr;
+            document.getElementById('modalTitle').innerText = "Заметка на " + titleStr;
+            document.getElementById('eventModal').style.display = 'flex';
+        }
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+        function closeModal() {
+            document.getElementById('eventModal').style.display = 'none';
+        }
+    </script>
+
 </body>
 </html>
