@@ -48,15 +48,35 @@
         }
 
         .nav-links li {
-            padding: 12px 15px;
             margin-bottom: 8px;
             border-radius: 8px;
+            overflow: hidden;
+            transition: 0.2s;
+        }
+
+        .nav-links li a {
+            padding: 12px 15px;
+            display: block;
             color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .nav-links li:hover {
+            background-color: rgba(88, 166, 255, 0.05);
+        }
+
+        .nav-links li:hover a {
+            color: var(--text-main);
         }
 
         .nav-links li.active {
             background-color: rgba(88, 166, 255, 0.1);
+        }
+
+        .nav-links li.active a {
             color: var(--text-main);
+            font-weight: bold;
         }
 
         /* Основной контент */
@@ -184,13 +204,13 @@
 </head>
 <body>
 
-    <!-- Боковая панель -->
+    <!-- Боковая панель с кнопочками -->
     <div class="sidebar">
         <div class="logo">Organizer</div>
         <ul class="nav-links">
-            <li>Пансионы</li>
-            <li class="active">Календарь</li>
-            <li>Настройки</li>
+            <li><a href="#">Пансионы</a></li>
+            <li class="active"><a href="/">Календарь</a></li>
+            <li><a href="#">Настройки</a></li>
         </ul>
     </div>
 
@@ -198,7 +218,7 @@
     <div class="main-content">
         <h2>Календарь событий (Сентябрь 2026)</h2>
 
-        <!-- Сетка календаря -->
+        <!-- Сетка календаря (каждое окошко открывает модальное окно) -->
         <div class="calendar-grid">
             {% for day in range(1, 31) %}
                 {% set day_str = "2026-09-%02d" % day %}
