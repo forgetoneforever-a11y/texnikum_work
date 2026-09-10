@@ -3,17 +3,32 @@ import json
 import os
 
 app = Flask(__name__)
-DATA_FILE = "data.json"
+
+# На Vercel можно писать только в /tmp, локально — в текущую папку
+if os.environ.get('VERCEL'):
+    DATA_FILE = "/tmp/data.json"
+    # При первом запуске на Vercel копируем дефолтный файл, если его нет
+    if not os.path.exists(DATA_FILE) and os.path.exists("data.json"):
+        import shutil
+        shutil.copy("data.json", DATA_FILE)
+else:
+    DATA_FILE = "data.json"
 
 def load_data():
     if not os.path.exists(DATA_FILE):
         return {"notes": [], "alarms": []}
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"notes": [], "alarms": []}
 
 def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    try:
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"Ошибка сохранения: {e}")
 
 @app.route('/')
 def index():
@@ -24,9 +39,8 @@ def index():
 @app.route('/add_note', methods=['POST'])
 def add_note():
     content = request.form.get('content')
-    run_date = request.form.get('run_date') # Дата из календаря
+    run_date = request.form.get('run_date')
     
-    # Автоматически делаем заголовок из первых слов заметки
     title = content[:20] + "..." if len(content) > 20 else content
 
     data = load_data()
