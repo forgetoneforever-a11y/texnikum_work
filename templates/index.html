@@ -2,287 +2,133 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Organizer - Календарь событий</title>
-    <style>
-        :root {
-            --bg-color: #0d0f18;
-            --sidebar-bg: #121520;
-            --card-bg: #161b22;
-            --border-color: #30363d;
-            --accent-color: #58a6ff;
-            --text-main: #ffffff;
-            --text-muted: #8b949e;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: Arial, sans-serif;
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Боковая панель */
-        .sidebar {
-            width: 240px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--accent-color);
-            margin-bottom: 40px;
-        }
-
-        .nav-links {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .nav-links li {
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--text-muted);
-            transition: 0.2s;
-        }
-
-        .nav-links li.active, .nav-links li:hover {
-            background-color: rgba(88, 166, 255, 0.1);
-            color: var(--text-main);
-        }
-
-        /* Основной контент */
-        .main-content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        h2 {
-            margin: 0;
-            font-size: 24px;
-        }
-
-        /* Сетка календаря на весь месяц */
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 12px;
-        }
-
-        .calendar-day {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 15px;
-            min-height: 110px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .calendar-day:hover {
-            border-color: var(--accent-color);
-            background-color: #1f242c;
-        }
-
-        .day-number {
-            font-weight: bold;
-            color: var(--text-muted);
-        }
-
-        .day-note-preview {
-            font-size: 11px;
-            background: #238636;
-            color: #fff;
-            padding: 3px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* Модальное окно */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 25px;
-            border-radius: 12px;
-            width: 450px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .modal-content textarea {
-            width: 100%;
-            height: 120px;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            color: #fff;
-            border-radius: 6px;
-            padding: 12px;
-            resize: none;
-            box-sizing: border-box;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        button {
-            padding: 10px 18px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .btn-cancel {
-            background-color: var(--border-color);
-            color: #fff;
-        }
-
-        .btn-save {
-            background-color: #238636;
-            color: #fff;
-        }
-
-        /* Блок со списком всех задач внизу */
-        .notes-section {
-            margin-top: 40px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 20px;
-        }
-
-        .note-item {
-            background: var(--card-bg);
-            padding: 12px 18px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #238636;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-    </style>
+    <title>Organizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-    <!-- Боковая панель -->
+    <!-- Фоновое видео -->
+    <video id="bg-video" autoplay muted loop>
+        <source src="" type="video/mp4" id="bg-source">
+    </video>
+
+    <!-- Меню -->
     <div class="sidebar">
-        <div class="logo">Organizer</div>
-        <ul class="nav-links">
-            <li>Пансионы</li>
-            <li class="active">Календарь</li>
-            <li>Настройки</li>
-        </ul>
+        <div class="logo">⚡ Organizer</div>
+        <div class="menu-item active" onclick="switchTab('schedule', this)">📅 Расписание</div>
+        <div class="menu-item" onclick="switchTab('calendar', this)">🗓️ Календарь</div>
+        <div class="menu-item" onclick="switchTab('settings', this)">⚙️ Настройки</div>
     </div>
 
-    <!-- Основное содержимое -->
+    <!-- Контент -->
     <div class="main-content">
-        <div class="header-container">
-            <h2>Календарь событий</h2>
-            <div>Сентябрь 2026</div>
+        
+        <!-- Панель: Расписание -->
+        <div id="schedule" class="panel active">
+            <div class="schedule-top-header">
+                <h2>Расписание занятий</h2>
+                <button class="btn btn-save" onclick="openScheduleModal()">➕ Добавить занятие</button>
+            </div>
+            <div class="schedule-container" id="schedule-list"></div>
         </div>
 
-        <!-- Сетка календаря (полный месяц с 1 по 30) -->
-        <div class="calendar-grid">
-            {% for day in range(1, 31) %}
-                {% set day_str = "2026-09-%02d" % day %}
-                <div class="calendar-day" onclick="openModal('{{ day_str }} 12:00:00', '{{ day }} Сентября 2026')">
-                    <div class="day-number">{{ day }}</div>
-                    
-                    <div class="day-tasks">
-                        {% for note in notes %}
-                            {% if note.run_date and note.run_date.startswith(day_str) %}
-                                <div class="day-note-preview" title="{{ note.content }}">{{ note.content }}</div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
+        <!-- Панель: Календарь -->
+        <div id="calendar" class="panel">
+            <div class="calendar-header">
+                <h2>Календарь событий</h2>
+                <div class="calendar-nav">
+                    <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+                    <span id="month-year-display">Сентябрь 2026</span>
+                    <button class="nav-btn" onclick="changeMonth(1)">›</button>
                 </div>
-            {% endfor %}
+            </div>
+            <div class="calendar-grid" id="cal-grid"></div>
         </div>
 
-        <!-- Список всех задач -->
-        <div class="notes-section">
-            <h3>Все сохраненные задачи:</h3>
-            {% if notes %}
-                {% for note in notes %}
-                    <div class="note-item">
-                        <div>
-                            <strong style="color: var(--accent-color);">📅 {{ note.run_date }}</strong>
-                            <p style="margin: 5px 0 0 0;">{{ note.content }}</p>
-                        </div>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p style="color: var(--text-muted);">Пока нет ни одной сохраненной заметки.</p>
-            {% endif %}
+        <!-- Панель: Настройки -->
+        <div id="settings" class="panel">
+            <h2>Настройки интерфейса</h2>
+            <div class="settings-container">
+                <div class="drop-zone" onclick="document.getElementById('file-input').click()">
+                    📁 Выбрать видеофайл для фона ПК
+                </div>
+                <input type="file" id="file-input" style="display: none;" accept="video/*" onchange="loadBackground(event)">
+                <div id="file-info" style="font-size: 13px; color: #888;">Фон не выбран</div>
+
+                <div class="setting-group">
+                    <label for="blur-slider">Размытие интерфейса (Blur): <span id="blur-value">12</span>px</label>
+                    <input type="range" id="blur-slider" min="0" max="30" value="12" oninput="updateBlur(this.value)">
+                </div>
+            </div>
         </div>
+
     </div>
 
-    <!-- Модальное окно -->
-    <div id="eventModal" class="modal">
+    <!-- Модальное окно для заметок в календаре (с выбором цвета) -->
+    <div id="note-modal" class="modal">
         <div class="modal-content">
-            <form action="/add_note" method="POST">
-                <h3 id="modalTitle" style="margin-top:0;">Событие</h3>
-                
-                <input type="hidden" name="run_date" id="selectedDateInput">
-                
-                <textarea name="content" placeholder="Введите заметку или задачу..." required></textarea>
-                
-                <div class="modal-actions">
-                    <button type="button" onclick="closeModal()" class="btn-cancel">Отмена</button>
-                    <button type="submit" class="btn-save">Сохранить</button>
+            <h3 id="modal-title">День 1</h3>
+            <textarea id="note-text" placeholder="Введите заметку или задачу..."></textarea>
+            
+            <div class="form-group">
+                <label>Приоритет / Цвет:</label>
+                <div class="color-picker-group">
+                    <label class="color-option green">
+                        <input type="radio" name="note-color" value="green" checked>
+                        <span>🟢 Рутина / Выполнено</span>
+                    </label>
+                    <label class="color-option orange">
+                        <input type="radio" name="note-color" value="orange">
+                        <span>🟠 Средний приоритет</span>
+                    </label>
+                    <label class="color-option red">
+                        <input type="radio" name="note-color" value="red">
+                        <span>🔴 Важный дедлайн</span>
+                    </label>
                 </div>
-            </form>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-save" onclick="saveNote()">Сохранить</button>
+            </div>
         </div>
     </div>
 
-    <script>
-        function openModal(dateStr, titleStr) {
-            document.getElementById('selectedDateInput').value = dateStr;
-            document.getElementById('modalTitle').innerText = "Заметка на " + titleStr;
-            document.getElementById('eventModal').style.display = 'flex';
-        }
+    <!-- Модальное окно для добавления / редактирования расписания -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="sched-modal-title">Добавить занятие</h3>
+            <div class="form-group">
+                <label>День недели:</label>
+                <select id="sched-day">
+                    <option value="Понедельник">Понедельник</option>
+                    <option value="Вторник">Вторник</option>
+                    <option value="Среда">Среда</option>
+                    <option value="Четверг">Четверг</option>
+                    <option value="Пятница">Пятница</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Время:</label>
+                <input type="text" id="sched-time" placeholder="например, 09:00 - 10:30">
+            </div>
+            <div class="form-group">
+                <label>Название дисциплины:</label>
+                <input type="text" id="sched-name" list="subjects-list" placeholder="Введите или выберите предмет...">
+                <datalist id="subjects-list"></datalist>
+            </div>
+            <div class="form-group">
+                <label>Аудитория / Кабинет:</label>
+                <input type="text" id="sched-room" placeholder="например, Ауд. 304">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeScheduleModal()">Отмена</button>
+                <button class="btn btn-save" onclick="saveScheduleItem()">Сохранить</button>
+            </div>
+        </div>
+    </div>
 
-        function closeModal() {
-            document.getElementById('eventModal').style.display = 'none';
-        }
-    </script>
-
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
