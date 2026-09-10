@@ -1,0 +1,11 @@
+{
+    "schedule": {},
+    "notes": {},
+    "disciplines": [],
+    "settings": {
+        "bg_type": "color",
+        "bg_value": "#b30000",
+        "bot_token": "",
+        "chat_id": ""
+    }
+}

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Organizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Фоновое видео -->
+    <video id="bg-video" autoplay muted loop>
+        <source src="" type="video/mp4" id="bg-source">
+    </video>
+
+    <!-- Меню -->
+    <div class="sidebar">
+        <div class="logo">⚡ Organizer</div>
+        <div class="menu-item active" onclick="switchTab('schedule', this)">📅 Расписание</div>
+        <div class="menu-item" onclick="switchTab('calendar', this)">🗓️ Календарь</div>
+        <div class="menu-item" onclick="switchTab('settings', this)">⚙️ Настройки</div>
+    </div>
+
+    <!-- Контент -->
+    <div class="main-content">
+        
+        <!-- Панель: Расписание -->
+        <div id="schedule" class="panel active">
+            <div class="schedule-top-header">
+                <h2>Расписание занятий</h2>
+                <button class="btn btn-save" onclick="openScheduleModal()">➕ Добавить занятие</button>
+            </div>
+            <div class="schedule-container" id="schedule-list"></div>
+        </div>
+
+        <!-- Панель: Календарь -->
+        <div id="calendar" class="panel">
+            <div class="calendar-header">
+                <h2>Календарь событий</h2>
+                <div class="calendar-nav">
+                    <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+                    <span id="month-year-display">Сентябрь 2026</span>
+                    <button class="nav-btn" onclick="changeMonth(1)">›</button>
+                </div>
+            </div>
+            <div class="calendar-grid" id="cal-grid"></div>
+        </div>
+
+        <!-- Панель: Настройки -->
+        <div id="settings" class="panel">
+            <h2>Настройки интерфейса</h2>
+            <div class="settings-container">
+                <div class="drop-zone" onclick="document.getElementById('file-input').click()">
+                    📁 Выбрать видеофайл для фона ПК
+                </div>
+                <input type="file" id="file-input" style="display: none;" accept="video/*" onchange="loadBackground(event)">
+                <div id="file-info" style="font-size: 13px; color: #888;">Фон не выбран</div>
+
+                <div class="setting-group">
+                    <label for="blur-slider">Размытие интерфейса (Blur): <span id="blur-value">12</span>px</label>
+                    <input type="range" id="blur-slider" min="0" max="30" value="12" oninput="updateBlur(this.value)">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Модальное окно для заметок в календаре -->
+    <div id="note-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title">День 1</h3>
+            <textarea id="note-text" placeholder="Введите заметку или задачу..."></textarea>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-save" onclick="saveNote()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления / редактирования расписания -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="sched-modal-title">Добавить занятие</h3>
+            <div class="form-group">
+                <label>День недели:</label>
+                <select id="sched-day">
+                    <option value="Понедельник">Понедельник</option>
+                    <option value="Вторник">Вторник</option>
+                    <option value="Среда">Среда</option>
+                    <option value="Четверг">Четверг</option>
+                    <option value="Пятница">Пятница</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Время:</label>
+                <input type="text" id="sched-time" placeholder="например, 09:00 - 10:30">
+            </div>
+            <div class="form-group">
+                <label>Название дисциплины:</label>
+                <input type="text" id="sched-name" list="subjects-list" placeholder="Введите или выберите предмет...">
+                <datalist id="subjects-list"></datalist>
+            </div>
+            <div class="form-group">
+                <label>Аудитория / Кабинет:</label>
+                <input type="text" id="sched-room" placeholder="например, Ауд. 304">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeScheduleModal()">Отмена</button>
+                <button class="btn btn-save" onclick="saveScheduleItem()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключаем скрипт из папки static -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
