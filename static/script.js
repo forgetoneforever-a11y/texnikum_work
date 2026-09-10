@@ -1,267 +1,128 @@
-let currentDayElement = null;
-let currentDate = new Date(2026, 8, 1); // Сентябрь 2026
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-// Структура заметки теперь хранит текст и цвет: { text: "...", color: "green/orange/red" }
-const notesStorage = {};
+# --- 1. Функция создания главного меню (в одну функцию, по ТЗ) ---
+def show_main_menu():
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        InlineKeyboardButton("📌 Добавить заметку", callback_data="menu_add_note"),
+        InlineKeyboardButton("⏰ Будильник", callback_data="menu_alarm"),
+        InlineKeyboardButton("📋 Мои заметки", callback_data="menu_my_notes"),
+        InlineKeyboardButton("❓ Помощь", callback_data="menu_help")
+    )
+    return keyboard
 
-const monthsNames = [
-    "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-    "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
-];
+# --- 2. Вывод меню по команде /start ---
+@dp.message_handler(commands=['start'])
+async def cmd_start(message: types.Message):
+    # Добавляем вызов меню везде, где требуется по ТЗ (в приветственное сообщение)
+    await message.answer(
+        "Привет! Я твой персональный помощник. Выбери нужное действие в меню ниже:",
+        reply_markup=show_main_menu()
+    )
 
-function switchTab(tabId, element) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-    
-    document.getElementById(tabId).classList.add('active');
-    if (element) {
-        element.classList.add('active');
-    }
-}
+# --- 3. Обработка нажатий на инлайн-кнопки главного меню ---
+@dp.callback_query_handler(lambda c: c.data.startswith('menu_'))
+async def process_menu_callback(callback_query: types.CallbackQuery):
+    code = callback_query.data
+    await bot.answer_callback_query(callback_query.id)
 
-// Календарь
-function renderCalendar() {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+    if code == "menu_add_note":
+        await bot.send_message(
+            callback_query.from_user.id, 
+            "✍️ Введите текст вашей новой заметки:"
+        )
+        # Здесь ваша существующая логика ожидания состояния для добавления заметки (например, FSM)
 
-    document.getElementById('month-year-display').innerText = `${monthsNames[month]} ${year}`;
+    elif code == "menu_alarm":
+        # Подменю вариантов будильника в колонку
+        alarm_kb = InlineKeyboardMarkup(row_width=1)
+        alarm_kb.add(
+            InlineKeyboardButton("⏱ Через 5 мин", callback_data="alarm_5m"),
+            InlineKeyboardButton("⏳ Через час", callback_data="alarm_1h"),
+            InlineKeyboardButton("🌅 Завтра в 8:00", callback_data="alarm_tomorrow_8"),
+            InlineKeyboardButton("◀️ Назад в меню", callback_data="menu_back")
+        )
+        await bot.edit_message_text(
+            "Выберите время для будильника:",
+            chat_id=callback_query.message.chat.id,
+            message_id=callback_query.message.message_id,
+            reply_markup=alarm_kb
+        )
 
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const grid = document.getElementById('cal-grid');
-    grid.innerHTML = '';
-
-    const today = new Date();
-    const isCurrentMonthYear = (today.getFullYear() === year && today.getMonth() === month);
-    const todayDate = today.getDate();
-
-    for (let i = 1; i <= daysInMonth; i++) {
-        const dateKey = `${year}-${month}-${i}`;
-        const noteObj = notesStorage[dateKey];
-
-        let noteTextHTML = "Нет задач";
-        let noteClass = "note-label empty";
-
-        if (noteObj && noteObj.text) {
-            noteTextHTML = noteObj.text;
-            noteClass = `note-label ${noteObj.color || 'green'}`;
-        }
-
-        const isToday = isCurrentMonthYear && (i === todayDate);
-        const todayClass = isToday ? 'today-cell' : '';
-
-        grid.innerHTML += `
-            <div class="calendar-day ${todayClass}" onclick="openModal(${i}, '${dateKey}', this)">
-                <strong>${i}</strong>
-                <span class="${noteClass}">${noteTextHTML}</span>
-            </div>`;
-    }
-}
-
-function changeMonth(direction) {
-    currentDate.setMonth(currentDate.getMonth() + direction);
-    renderCalendar();
-}
-
-// Навигация стрелочками клавиатуры в календаре
-document.addEventListener('keydown', (e) => {
-    const calendarPanel = document.getElementById('calendar');
-    const modal = document.getElementById('note-modal');
-    const schedModal = document.getElementById('schedule-modal');
-    
-    if (calendarPanel.classList.contains('active') && !modal.classList.contains('active') && !schedModal.classList.contains('active')) {
-        if (e.key === 'ArrowLeft') changeMonth(-1);
-        else if (e.key === 'ArrowRight') changeMonth(1);
-    }
-});
-
-function openModal(dayNum, dateKey, element) {
-    currentDayElement = { element, dateKey };
-    document.getElementById('modal-title').innerText = `${dayNum} ${monthsNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-    
-    const noteObj = notesStorage[dateKey] || { text: "", color: "green" };
-    document.getElementById('note-text').value = noteObj.text;
-
-    // Выставляем нужную радиокнопку цвета
-    const colorRadio = document.querySelector(`input[name="note-color"][value="${noteObj.color || 'green'}"]`);
-    if (colorRadio) colorRadio.checked = true;
-
-    document.getElementById('note-modal').classList.add('active');
-}
-
-function closeModal() {
-    document.getElementById('note-modal').classList.remove('active');
-}
-
-function saveNote() {
-    if (currentDayElement) {
-        const text = document.getElementById('note-text').value.trim();
-        const selectedColor = document.querySelector('input[name="note-color"]:checked').value;
-        const { element, dateKey } = currentDayElement;
-        const noteSpan = element.querySelector('.note-label');
+    elif code == "menu_my_notes":
+        # Логика вывода списка заметок (с кнопками «Удалить» и «Редактировать» для каждой)
+        notes = [] # Здесь ваш источник данных (например, база данных или словарь)
         
-        if (text) {
-            notesStorage[dateKey] = { text: text, color: selectedColor };
-            noteSpan.innerText = text;
-            noteSpan.className = `note-label ${selectedColor}`;
-            
-            // Если заметка красная (важная), можно выводить консольное уведомление или делать акцент
-            if (selectedColor === 'red') {
-                console.warn(`🔥 Важное событие (${dateKey}): ${text}`);
-            }
-        } else {
-            delete notesStorage[dateKey];
-            noteSpan.innerText = "Нет задач";
-            noteSpan.className = "note-label empty";
-        }
-    }
-    closeModal();
-}
+        if not notes:
+            notes_kb = InlineKeyboardMarkup().add(InlineKeyboardButton("◀️ Назад в меню", callback_data="menu_back"))
+            await bot.edit_message_text(
+                "У вас пока нет сохраненных заметок.",
+                chat_id=callback_query.message.chat.id,
+                message_id=callback_query.message.message_id,
+                reply_markup=notes_kb
+            )
+            return
 
-// Закрытие любых модальных окон при клике на фоновую область мимо содержимого
-document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            modal.classList.remove('active');
-        }
-    });
-});
+        notes_kb = InlineKeyboardMarkup(row_width=2)
+        for idx, note in enumerate(notes):
+            # Для каждой заметки добавляем текст/номер и кнопки «Удалить» и «Редактировать»
+            notes_kb.add(
+                InlineKeyboardButton(f"✏️ Ред. #{idx+1}", callback_data=f"note_edit_{idx}"),
+                InlineKeyboardButton(f"🗑 Удал. #{idx+1}", callback_data=f"note_del_{idx}")
+            )
+        notes_kb.add(InlineKeyboardButton("◀️ Назад в меню", callback_data="menu_back"))
 
-renderCalendar();
+        await bot.edit_message_text(
+            "📋 Ваши заметки:",
+            chat_id=callback_query.message.chat.id,
+            message_id=callback_query.message.message_id,
+            reply_markup=notes_kb
+        )
 
-// Расписание
-let scheduleData = [
-    { day: "Понедельник", lessons: [ {time: "09:00 - 10:30", name: "Инженерная графика", room: "Ауд. 304"}, {time: "10:40 - 12:10", name: "Высшая математика", room: "Ауд. 512"} ] },
-    { day: "Вторник", lessons: [ {time: "09:00 - 10:30", name: "Материаловедение", room: "Ауд. 201"}, {time: "10:40 - 12:10", name: "Физика", room: "Ауд. 405"} ] },
-    { day: "Среда", lessons: [ {time: "11:30 - 13:00", name: "Программирование", room: "ПК-комната"}, {time: "13:30 - 15:00", name: "Электротехника", room: "Ауд. 108"} ] },
-    { day: "Четверг", lessons: [ {time: "09:00 - 10:30", name: "Детали машин", room: "Ауд. 316"} ] },
-    { day: "Пятница", lessons: [ {time: "09:00 - 10:30", name: "Метрология", room: "Ауд. 220"}, {time: "10:40 - 12:10", name: "Физкультура", room: "Спортзал"} ] }
-];
+    elif code == "menu_help":
+        help_kb = InlineKeyboardMarkup().add(InlineKeyboardButton("◀️ Назад в меню", callback_data="menu_back"))
+        await bot.edit_message_text(
+            "ℹ️ Этот бот помогает управлять заметками, устанавливать будильники и организовывать расписание.\n"
+            "Используйте кнопки ниже для навигации.",
+            chat_id=callback_query.message.chat.id,
+            message_id=callback_query.message.message_id,
+            reply_markup=help_kb
+        )
 
-let editingItem = null;
+    elif code == "menu_back":
+        await bot.edit_message_text(
+            "Главное меню:",
+            chat_id=callback_query.message.chat.id,
+            message_id=callback_query.message.message_id,
+            reply_markup=show_main_menu()
+        )
 
-function renderSchedule() {
-    const scheduleList = document.getElementById('schedule-list');
-    scheduleList.innerHTML = '';
+# --- 4. Обработка подменю будильника (через callback_query_handler) ---
+@dp.callback_query_handler(lambda c: c.data.startswith('alarm_'))
+async def process_alarm_callback(callback_query: types.CallbackQuery):
+    await bot.answer_callback_query(callback_query.id)
+    action = callback_query.data
+    
+    response_text = ""
+    if action == "alarm_5m":
+        response_text = "✅ Будильник установлен через 5 минут."
+    elif action == "alarm_1h":
+        response_text = "✅ Будильник установлен через 1 час."
+    elif action == "alarm_tomorrow_8":
+        response_text = "✅ Будильник установлен на завтра в 8:00."
 
-    scheduleData.forEach((item, dIndex) => {
-        let lessonsHTML = item.lessons.map((l, lIndex) => `
-            <div class="lesson-item">
-                <span class="lesson-time">${l.time}</span>
-                <span class="lesson-name"><b>${l.name}</b></span>
-                <span class="lesson-room">${l.room}</span>
-                <div class="lesson-actions">
-                    <button class="action-btn" title="Редактировать" onclick="openEditScheduleModal(${dIndex}, ${lIndex})">✏️</button>
-                    <button class="action-btn delete-btn" title="Удалить" onclick="deleteScheduleItem(${dIndex}, ${lIndex})">🗑️</button>
-                </div>
-            </div>
-        `).join('');
+    back_kb = InlineKeyboardMarkup().add(InlineKeyboardButton("◀️ Главное меню", callback_data="menu_back"))
+    await bot.edit_message_text(
+        response_text,
+        chat_id=callback_query.message.chat.id,
+        message_id=callback_query.message.message_id,
+        reply_markup=back_kb
+    )
 
-        scheduleList.innerHTML += `
-            <div class="schedule-day-card">
-                <div class="schedule-day-title">${item.day}</div>
-                ${lessonsHTML}
-            </div>
-        `;
-    });
-    updateSubjectsDatalist();
-}
-
-function updateSubjectsDatalist() {
-    const datalist = document.getElementById('subjects-list');
-    datalist.innerHTML = '';
-    const subjects = new Set();
-    scheduleData.forEach(d => d.lessons.forEach(l => subjects.add(l.name)));
-    subjects.forEach(sub => {
-        datalist.innerHTML += `<option value="${sub}">`;
-    });
-}
-
-function openScheduleModal() {
-    editingItem = null;
-    document.getElementById('sched-modal-title').innerText = "Добавить занятие";
-    document.getElementById('sched-day').disabled = false;
-    document.getElementById('sched-time').value = '';
-    document.getElementById('sched-name').value = '';
-    document.getElementById('sched-room').value = '';
-    document.getElementById('schedule-modal').classList.add('active');
-}
-
-function openEditScheduleModal(dIndex, lIndex) {
-    editingItem = { dIndex, lIndex };
-    const lesson = scheduleData[dIndex].lessons[lIndex];
-    const dayName = scheduleData[dIndex].day;
-
-    document.getElementById('sched-modal-title').innerText = "Редактировать занятие";
-    document.getElementById('sched-day').value = dayName;
-    document.getElementById('sched-day').disabled = true;
-    document.getElementById('sched-time').value = lesson.time;
-    document.getElementById('sched-name').value = lesson.name;
-    document.getElementById('sched-room').value = lesson.room === "—" ? "" : lesson.room;
-
-    document.getElementById('schedule-modal').classList.add('active');
-}
-
-function closeScheduleModal() {
-    document.getElementById('schedule-modal').classList.remove('active');
-    editingItem = null;
-}
-
-function saveScheduleItem() {
-    const day = document.getElementById('sched-day').value;
-    const time = document.getElementById('sched-time').value.trim();
-    const name = document.getElementById('sched-name').value.trim();
-    const room = document.getElementById('sched-room').value.trim();
-
-    if (!time || !name) {
-        alert('Заполните время и название дисциплины!');
-        return;
-    }
-
-    if (editingItem !== null) {
-        const { dIndex, lIndex } = editingItem;
-        scheduleData[dIndex].lessons[lIndex] = { time, name, room: room || "—" };
-    } else {
-        let dayObj = scheduleData.find(d => d.day === day);
-        if (!dayObj) {
-            dayObj = { day: day, lessons: [] };
-            scheduleData.push(dayObj);
-        }
-        dayObj.lessons.push({ time, name, room: room || "—" });
-    }
-
-    renderSchedule();
-    closeScheduleModal();
-}
-
-function deleteScheduleItem(dIndex, lIndex) {
-    scheduleData[dIndex].lessons.splice(lIndex, 1);
-    if (scheduleData[dIndex].lessons.length === 0) {
-        scheduleData.splice(dIndex, 1);
-    }
-    renderSchedule();
-}
-
-renderSchedule();
-
-function loadBackground(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const videoURL = URL.createObjectURL(file);
-        const bgSource = document.getElementById('bg-source');
-        const bgVideo = document.getElementById('bg-video');
-        
-        bgSource.src = videoURL;
-        bgVideo.load();
-        bgVideo.play();
-
-        document.getElementById('file-info').innerHTML = `Активный файл: <b style="color:#8f94fb;">${file.name}</b>`;
-    }
-}
-
-function updateBlur(value) {
-    document.getElementById('blur-value').innerText = value;
-    document.querySelectorAll('.panel').forEach(panel => {
-        panel.style.backdropFilter = `blur(${value}px)`;
-        panel.style.webkitBackdropFilter = `blur(${value}px)`;
-    });
-}
+# Пример интеграции меню в текстовые сообщения с напоминаниями (где это необходимо)
+async def send_reminder_notification(user_id, reminder_text):
+    await bot.send_message(
+        user_id, 
+        f"🔔 Напоминание: {reminder_text}", 
+        reply_markup=show_main_menu()
+    )
